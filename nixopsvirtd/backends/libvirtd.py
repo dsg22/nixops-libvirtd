@@ -295,7 +295,7 @@ class LibvirtdState(MachineState):
             '    <input type="keyboard" bus="usb"/>',
             '    <input type="mouse" bus="usb"/>',
             '    <rng model="virtio">',
-            '      <backend model='random'>/dev/urandom</backend>',
+            '      <backend model="random">/dev/urandom</backend>',
             '    </rng>',
             '',
 

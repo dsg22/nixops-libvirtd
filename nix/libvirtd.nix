@@ -25,8 +25,8 @@ let
         mkdir /mnt
         mount /dev/vda1 /mnt
 
-        mkdir -p /mnt/etc/ssh/authorized_keys.d
-        echo '${the_key}' > /mnt/etc/ssh/authorized_keys.d/root
+        mkdir -p /root/.ssh
+        echo '${the_key}' > /root/.ssh/authorized_keys
         umount /mnt
       ''
   );

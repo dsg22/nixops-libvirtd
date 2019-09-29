@@ -258,6 +258,7 @@ class LibvirtdState(MachineState):
                 '    <interface type="network">',
                 maybe_mac(n),
                 '      <source network="{0}"/>',
+                '      <model type="virtio"/>',
                 '    </interface>',
             ]).format(n)
 
@@ -281,7 +282,7 @@ class LibvirtdState(MachineState):
             '    <disk type="file" device="disk">',
             '      <driver name="qemu" type="qcow2"/>',
             '      <source file="{3}"/>',
-            '      <target dev="hda"/>',
+            '      <target dev="vda" bus="virtio"/>',
             '    </disk>',
             '\n'.join([iface(n) for n in defn.networks]),
             '    <graphics type="vnc" port="-1" autoport="yes"/>' if not defn.headless else "",

@@ -7,8 +7,10 @@ let
       fileSystems."/".device = "/dev/disk/by-label/nixos";
 
       boot.loader.grub.version = 2;
-      boot.loader.grub.device = "/dev/sda";
+      boot.loader.grub.device = "/dev/vda";
       boot.loader.timeout = 0;
+
+      boot.initrd.availableKernelModules = [ "virtio_pci" "virtio_blk" ];
 
       services.openssh.enable = true;
       services.openssh.startWhenNeeded = false;

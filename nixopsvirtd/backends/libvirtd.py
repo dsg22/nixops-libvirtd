@@ -36,6 +36,7 @@ class LibvirtdDefinition(MachineDefinition):
         self.extra_domain = x.find("attr[@name='extraDomainXML']/string").get("value")
         self.headless = x.find("attr[@name='headless']/bool").get("value") == 'true'
         self.domain_type = x.find("attr[@name='domainType']/string").get("value")
+        self.rng_device = x.find("attr[@name='rngDevice']/string").get("value")
         self.kernel = x.find("attr[@name='kernel']/string").get("value")
         self.initrd = x.find("attr[@name='initrd']/string").get("value")
         self.cmdline = x.find("attr[@name='cmdline']/string").get("value")
@@ -288,6 +289,9 @@ class LibvirtdState(MachineState):
             '    <graphics type="vnc" port="-1" autoport="yes"/>' if not defn.headless else "",
             '    <input type="keyboard" bus="usb"/>',
             '    <input type="mouse" bus="usb"/>',
+            '    <rng model="virtio">',
+            '      <backend model="random">{6}</backend>',
+            '    </rng>',
             defn.extra_devices,
             '  </devices>',
             defn.extra_domain,
@@ -301,6 +305,7 @@ class LibvirtdState(MachineState):
             self.vol.path(),
             defn.vcpu,
             defn.domain_type
+            defn.rng_device
         )
 
     def _parse_ip(self):

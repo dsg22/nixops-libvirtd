@@ -10,7 +10,7 @@ let
       boot.loader.grub.device = "/dev/vda";
       boot.loader.timeout = 0;
 
-      boot.initrd.availableKernelModules = [ "virtio_pci" "virtio_blk" ];
+      boot.initrd.availableKernelModules = [ "virtio_pci" "virtio_blk" "virtio_rng" ];
 
       services.openssh.enable = true;
       services.openssh.startWhenNeeded = false;

@@ -6,6 +6,10 @@ let
   sz = toString config.deployment.libvirtd.baseImageSize;
   base_image = import ./libvirtd-image.nix { size = sz; };
   the_key = builtins.getEnv "NIXOPS_LIBVIRTD_PUBKEY";
+  disk_device = if deployment.libvirtd.storageUseVirtio then
+        "/dev/vda"
+      else
+        "/dev/sda";
   ssh_image = pkgs.vmTools.runInLinuxVM (
     pkgs.runCommand "libvirtd-ssh-image"
       { memSize = 768;
@@ -23,7 +27,7 @@ let
       }
       ''
         mkdir /mnt
-        mount /dev/vda1 /mnt
+        mount ${disk_device}1 /mnt
 
         mkdir -p /mnt/etc/ssh/authorized_keys.d
         echo '${the_key}' > /mnt/etc/ssh/authorized_keys.d/root
@@ -75,6 +79,24 @@ in
       example = "/dev/random";
       description = ''
         The device to use as a source for virtio-rng entropy.
+      '';
+    };
+
+    deployment.libvirtd.storageUseVirtio = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        If enabled, use the virtio bus for exposing the virtual machine
+        disks.
+      '';
+    };
+
+    deployment.libvirtd.networkUseVirtio = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        If enabled, use the virtio bus for exposing the virtual machine
+        network interfaces.
       '';
     };
 
@@ -157,7 +179,7 @@ in
     fileSystems."/".device = "/dev/disk/by-label/nixos";
 
     boot.loader.grub.version = 2;
-    boot.loader.grub.device = "/dev/vda";
+    boot.loader.grub.device = disk_device;
     boot.loader.timeout = 0;
 
     boot.initrd.availableKernelModules = [ "virtio_pci" "virtio_blk" "virtio-rng" ];

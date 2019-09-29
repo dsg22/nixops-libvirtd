@@ -34,6 +34,8 @@ class LibvirtdDefinition(MachineDefinition):
         self.memory_size = x.find("attr[@name='memorySize']/int").get("value")
         self.extra_devices = x.find("attr[@name='extraDevicesXML']/string").get("value")
         self.extra_domain = x.find("attr[@name='extraDomainXML']/string").get("value")
+        self.storage_use_virtio = x.find("attr[@name='storageUseVirtio']/bool").get("value") == 'true'
+        self.network_use_virtio = x.find("attr[@name='networkUseVirtio']/bool").get("value") == 'true'
         self.headless = x.find("attr[@name='headless']/bool").get("value") == 'true'
         self.domain_type = x.find("attr[@name='domainType']/string").get("value")
         self.rng_device = x.find("attr[@name='rngDevice']/string").get("value")
@@ -259,7 +261,7 @@ class LibvirtdState(MachineState):
                 '    <interface type="network">',
                 maybe_mac(n),
                 '      <source network="{0}"/>',
-                '      <model type="virtio"/>',
+                '      <model type="virtio"/>' if not defn.network_use_virtio else '',
                 '    </interface>',
             ]).format(n)
 
@@ -272,6 +274,20 @@ class LibvirtdState(MachineState):
                 "    <cmdline>%s</cmdline>" % defn.cmdline if len(defn.kernel) > 0 else "",
                 '</os>']
 
+        def _make_disk(defn):
+            if defn.storage_use_virtio:
+                dev = 'vda'
+                bus = ' bus="virtio"'
+            else:
+                dev = 'sda'
+                bus = ''
+            return [
+                '    <disk type="file" device="disk">',
+                '      <driver name="qemu" type="qcow2"/>',
+                '      <source file="{3}"/>',
+                '      <target dev="{}"{}/>'.format(dev, bus),
+                '    </disk>']
+
         domain_fmt = "\n".join([
             '<domain type="{5}">',
             '  <name>{0}</name>',
@@ -280,11 +296,7 @@ class LibvirtdState(MachineState):
             '\n'.join(_make_os(defn)),
             '  <devices>',
             '    <emulator>{2}</emulator>',
-            '    <disk type="file" device="disk">',
-            '      <driver name="qemu" type="qcow2"/>',
-            '      <source file="{3}"/>',
-            '      <target dev="vda" bus="virtio"/>',
-            '    </disk>',
+            '\n'.join(_make_disk(defn)),
             '\n'.join([iface(n) for n in defn.networks]),
             '    <graphics type="vnc" port="-1" autoport="yes"/>' if not defn.headless else "",
             '    <input type="keyboard" bus="usb"/>',

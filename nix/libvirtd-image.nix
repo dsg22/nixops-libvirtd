@@ -3,11 +3,17 @@ let
   pkgs = import <nixpkgs> {};
   config = (import <nixpkgs/nixos/lib/eval-config.nix> {
     inherit system;
+    disk_device = if deployment.libvirtd.storageUseVirtio then
+          "/dev/vda"
+        else
+          "/dev/sda";
+
     modules = [ {
       fileSystems."/".device = "/dev/disk/by-label/nixos";
 
       boot.loader.grub.version = 2;
-      boot.loader.grub.device = "/dev/vda";
+      boot.loader.grub.device = disk_device;
+
       boot.loader.timeout = 0;
 
       boot.initrd.availableKernelModules = [ "virtio_pci" "virtio_blk" "virtio_rng" ];
@@ -38,14 +44,14 @@ in pkgs.vmTools.runInLinuxVM (
     }
     ''
       # Create a single / partition.
-      ${pkgs.parted}/sbin/parted /dev/vda mklabel msdos
-      ${pkgs.parted}/sbin/parted /dev/vda -- mkpart primary ext2 1M -1s
+      ${pkgs.parted}/sbin/parted ${disk_device} mklabel msdos
+      ${pkgs.parted}/sbin/parted ${disk_device} -- mkpart primary ext2 1M -1s
 
       # Create an empty filesystem and mount it.
-      ${pkgs.e2fsprogs}/sbin/mkfs.ext4 -L nixos /dev/vda1
-      ${pkgs.e2fsprogs}/sbin/tune2fs -c 0 -i 0 /dev/vda1
+      ${pkgs.e2fsprogs}/sbin/mkfs.ext4 -L nixos ${disk_device}1
+      ${pkgs.e2fsprogs}/sbin/tune2fs -c 0 -i 0 ${disk_device}1
       mkdir /mnt
-      mount /dev/vda1 /mnt
+      mount ${disk_device}1 /mnt
 
       # The initrd expects these directories to exist.
       mkdir /mnt/dev /mnt/proc /mnt/sys

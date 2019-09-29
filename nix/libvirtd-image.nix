@@ -1,12 +1,12 @@
 { system ? builtins.currentSystem, size ? "10" }:
 let
   pkgs = import <nixpkgs> {};
+  disk_device = if config.deployment.libvirtd.storageUseVirtio then
+        "/dev/vda"
+      else
+        "/dev/sda";
   config = (import <nixpkgs/nixos/lib/eval-config.nix> {
     inherit system;
-    disk_device = if config.deployment.libvirtd.storageUseVirtio then
-          "/dev/vda"
-        else
-          "/dev/sda";
 
     modules = [ {
       fileSystems."/".device = "/dev/disk/by-label/nixos";

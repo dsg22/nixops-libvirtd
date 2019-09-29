@@ -69,6 +69,15 @@ in
       '';
     };
 
+    deployment.libvirtd.rngDevice = mkOption {
+      type = types.str;
+      default = "/dev/urandom";
+      example = "/dev/random";
+      description = ''
+        The device to use as a source for virtio-rng entropy.
+      '';
+    };
+
     deployment.libvirtd.headless = mkOption {
       default = false;
       description = ''
@@ -151,7 +160,7 @@ in
     boot.loader.grub.device = "/dev/vda";
     boot.loader.timeout = 0;
 
-    boot.initrd.availableKernelModules = [ "virtio_pci" "virtio_blk" ];
+    boot.initrd.availableKernelModules = [ "virtio_pci" "virtio_blk" "virtio-rng" ];
 
     services.openssh.enable = true;
     services.openssh.startWhenNeeded = false;

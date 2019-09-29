@@ -3,7 +3,7 @@ let
   pkgs = import <nixpkgs> {};
   config = (import <nixpkgs/nixos/lib/eval-config.nix> {
     inherit system;
-    disk_device = if deployment.libvirtd.storageUseVirtio then
+    disk_device = if config.deployment.libvirtd.storageUseVirtio then
           "/dev/vda"
         else
           "/dev/sda";

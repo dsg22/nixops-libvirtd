@@ -6,7 +6,7 @@ let
   sz = toString config.deployment.libvirtd.baseImageSize;
   base_image = import ./libvirtd-image.nix { size = sz; };
   the_key = builtins.getEnv "NIXOPS_LIBVIRTD_PUBKEY";
-  disk_device = if deployment.libvirtd.storageUseVirtio then
+  disk_device = if config.deployment.libvirtd.storageUseVirtio then
         "/dev/vda"
       else
         "/dev/sda";

@@ -46,15 +46,12 @@ class LibvirtdDefinition(MachineDefinition):
         self.networks = [
             k.get("value")
             for k in x.findall("attr[@name='networks']/list/string")]
-        assert len(self.networks) > 0
 
 
 class LibvirtdState(MachineState):
     private_ipv4 = nixops.util.attr_property("privateIpv4", None)
     client_public_key = nixops.util.attr_property("libvirtd.clientPublicKey", None)
     client_private_key = nixops.util.attr_property("libvirtd.clientPrivateKey", None)
-    primary_net = nixops.util.attr_property("libvirtd.primaryNet", None)
-    primary_mac = nixops.util.attr_property("libvirtd.primaryMAC", None)
     domain_xml = nixops.util.attr_property("libvirtd.domainXML", None)
     disk_path = nixops.util.attr_property("libvirtd.diskPath", None)
     storage_volume_name = nixops.util.attr_property("libvirtd.storageVolume", None)
@@ -135,17 +132,9 @@ class LibvirtdState(MachineState):
     def _vm_id(self):
         return "nixops-{0}-{1}".format(self.depl.uuid, self.name)
 
-    def _generate_primary_mac(self):
-        mac = [0x52, 0x54, 0x00,
-               random.randint(0x00, 0x7f),
-               random.randint(0x00, 0xff),
-               random.randint(0x00, 0xff)]
-        self.primary_mac = ':'.join(map(lambda x: "%02x" % x, mac))
-
     def create(self, defn, check, allow_reboot, allow_recreate):
         assert isinstance(defn, LibvirtdDefinition)
         self.set_common_state(defn)
-        self.primary_net = defn.networks[0]
         self.storage_pool_name = defn.storage_pool_name
         self.uri = defn.uri
 
@@ -153,9 +142,6 @@ class LibvirtdState(MachineState):
         # https://libvirt.org/formatdomaincaps.html
         if self.conn.getLibVersion() < 1002007:
             raise Exception('libvirt 1.2.7 or newer is required at the target host')
-
-        if not self.primary_mac:
-            self._generate_primary_mac()
 
         if not self.client_public_key:
             (self.client_private_key, self.client_public_key) = nixops.util.create_key_pair()
@@ -248,16 +234,9 @@ class LibvirtdState(MachineState):
     def _make_domain_xml(self, defn):
         qemu = self._get_qemu_executable()
 
-        def maybe_mac(n):
-            if n == self.primary_net:
-                return '<mac address="' + self.primary_mac + '" />'
-            else:
-                return ""
-
         def iface(n):
             return "\n".join([
                 '    <interface type="network">',
-                maybe_mac(n),
                 '      <source network="{0}"/>',
                 '      <model type="virtio"/>',
                 '    </interface>',
@@ -344,7 +323,6 @@ class LibvirtdState(MachineState):
     def start(self):
         assert self.vm_id
         assert self.domain_xml
-        assert self.primary_net
         if self._is_running():
             self.log("connecting...")
             self.private_ipv4 = self._parse_ip()
